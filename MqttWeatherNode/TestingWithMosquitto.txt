@@ -1,0 +1,11 @@
+1) On Server Sub, Pub:
+mosquitto_sub -h localhost -t LightSensingNodeOut -u "ec2BrokerClient" -P "mqttEc2BrokerMagic"
+
+mosquitto_pub -h localhost -t LightSensingNodeIn -u "ec2BrokerClient" -P "mqttEc2BrokerMagic" -m "0 Led Off from Dublin"
+mosquitto_pub -h localhost -t LightSensingNodeIn -u "ec2BrokerClient" -P "mqttEc2BrokerMagic" -m "1 Led On From Dublin"
+
+2) Remote Sub, Pub:
+mosquitto_sub -h mqtt.zapto.org -t LightSensingNodeOut -u "ec2BrokerClient" -P "mqttEc2BrokerMagic"
+
+mosquitto_pub -h mqtt.zapto.org -t LightSensingNodeIn -u "ec2BrokerClient" -P "mqttEc2BrokerMagic" -m "0 Led Off from Lodz"
+mosquitto_pub -h mqtt.zapto.org -t LightSensingNodeIn -u "ec2BrokerClient" -P "mqttEc2BrokerMagic" -m "1 Led On from Lodz"
