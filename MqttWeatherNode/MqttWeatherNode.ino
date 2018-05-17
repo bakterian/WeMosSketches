@@ -3,7 +3,6 @@
 #include <Wire.h>
 #include "BH1750.h"
 #include <DHT.h>
-#include <NTPClient.h>
 #include <WiFiUdp.h>
 
 #if 0 //Set your wifi credentials or even better keep those in a un-tracked file
@@ -44,8 +43,6 @@ BH1750 lightMeter(LIGHT_SENSOR_ADDR);
 DHT dht(DHT_PIN, DHT_TYPE);
 
 WiFiUDP ntpUDP;
-// timeClient(ntpUdp,ntpServer,offset,updateInterval);
-NTPClient timeClient(ntpUDP,"2.pl.pool.ntp.org",0,MQTT_PUB_INTERVAL_MS/2);
 
 unsigned long lastSend;
 unsigned int gMsgCounter = 0;
@@ -65,6 +62,13 @@ String Float2String(const float value) {
   dtostrf(value, 13, 2, temp);
   s = String(temp);
   s.trim();
+  return s;
+}
+
+String Value2Json(const String& type, const String& value) 
+{
+  String s = F("\"{t}\":\"{v}\"");
+  s.replace("{t}", type); s.replace("{v}", value);
   return s;
 }
 
@@ -126,26 +130,25 @@ void onMqttMsgReceive(char* topic, byte* payload, unsigned int length) {
   UpdateLED();
 }
 
-void sendMqttMeasData(String counter,String timeStamp, String light,DhtMeasData dhtData, bool ledOn)
+
+void sendMqttMeasData(String counter, String light,DhtMeasData dhtData, String ledState)
 {
     // Just debug messages
   Serial.print( "Sending measurments: [" );
   Serial.print( counter ); Serial.print( "," );
-  Serial.print( timeStamp ); Serial.print( "," );
   Serial.print( dhtData.Temperature ); Serial.print( "," );
   Serial.print( dhtData.Humidity ); Serial.print( "," );
   Serial.print( light ); Serial.print( "," );
-  Serial.print( ledOn );
+  Serial.print( ledState );
   Serial.print( "]   -> " );
 
   // Prepare a JSON payload string
   String payload = "{";
-  payload += "\"counter\":"; payload += counter; payload += ",";
-  payload += "\"time\":"; payload += timeStamp; payload += ",";
-  payload += "\"temp\":"; payload += dhtData.Temperature; payload += ",";
-  payload += "\"humid\":"; payload += dhtData.Humidity; payload += ",";
-  payload += "\"light\":"; payload += light; payload += ",";
-  payload += "\"LED\":"; payload += ledOn;
+  payload += Value2Json("counter",counter); payload += ",";
+  payload += Value2Json("temp",dhtData.Temperature); "\"temp\":"; payload += ",";
+  payload += Value2Json("humid",dhtData.Humidity); payload += ",";
+  payload += Value2Json("light",light); payload += ",";
+  payload += Value2Json("LED",ledState);
   payload += "}";
 
   // Send payload
@@ -162,9 +165,8 @@ void readMeasData(unsigned int msgCounter)
 
   auto dhtData = GetDhtSensorData();
   String light = String(lux);
-  auto timeStamp = timeClient.getFormattedTime();
-  
-  sendMqttMeasData(String(msgCounter),timeStamp, light,dhtData, gLedOn);
+  String ledState = gLedOn ? "1" : "0";
+  sendMqttMeasData(String(msgCounter), light,dhtData, ledState);
 }
 
 
@@ -227,8 +229,6 @@ void setup()
   client.setServer(thingsboardServer, MQTT_PORT );
   client.setCallback(onMqttMsgReceive);
   lastSend = 0;
-
-  timeClient.begin(123);
 }
 
 
@@ -242,7 +242,6 @@ void loop()
   if ( millis() - lastSend > MQTT_PUB_INTERVAL_MS ) 
   { 
     gMsgCounter++;
-    timeClient.update();  
     readMeasData(gMsgCounter);   
     lastSend = millis();
   }
