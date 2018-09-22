@@ -30,8 +30,11 @@ Flash Startup (Normal)			1						1						0
 SD-Card Boot					0						0						1
 
 It is recommended to use only the following GPIOs:
-D2 GPIO4
+D0 GPIO16
 D1 GPIO5
+D2 GPIO4
+D4 GPIO2 (Acceptable, in case of flashing issues diconnect/unsoldier stuff connected here)
 D5 GPIO14
 D6 GPIO12
 D7 GPIO13
+D8 GPIO15 (Acceptable, in case of flashing issues diconnect/unsoldier stuff connected here)
