@@ -45,6 +45,8 @@
 #include "lmic.h"
 #include "hal/hal.h"
 #include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_BMP085.h>
 
 
 //---------------------------------------------------------
@@ -85,6 +87,8 @@ unsigned char DevAddr[4] = { 0x26, 0x01, 0x18, 0x14 };
 // D1 - GPIO5 - SCL shared with NSS.
 // D2 - GPIO4 - SDA
 
+Adafruit_BMP085 bmp;
+
 // ----------------------------------------------------------------------------
 // APPLICATION CALLBACKS
 // ----------------------------------------------------------------------------
@@ -124,6 +128,10 @@ extern const lmic_pinmap lmic_pins = {
 void onEvent (ev_t ev) {
     //debug_event(ev);
     //TODO: HANDLE UNSUCCESFUL SEND EVENT IN HERE (GO IN TO LONGER SLEEP PERIODS)
+    //IF TXRXPEND is caputed 3 times in a row log (otherwise clear counter). 
+    //Turn on event logging to file in next run -> Store log file and clear the counter.
+    //Go in to a longer sleep period like 30 minutes.
+    
     switch(ev) {
       // scheduled data sent (optionally data received)
       // note: this includes the receive window!
@@ -142,6 +150,17 @@ void onEvent (ev_t ev) {
     }
 }
 
+void doBmpMeasurments()
+{
+    Serial.print("Temperature = ");
+    Serial.print(bmp.readTemperature());
+    Serial.println(" *C");
+    
+    Serial.print("Pressure = ");
+    Serial.print(bmp.readPressure());
+    Serial.println(" Pa");
+}
+
 void do_send(osjob_t* j){
 	  delay(1);													// XXX delay is added for Serial
       Serial.print("Time: ");
@@ -155,6 +174,8 @@ void do_send(osjob_t* j){
       Serial.println("OP_TXRXPEND, not sending");
     } 
 	else {
+	
+    doBmpMeasurments();
     
 	  strcpy((char *) mydata,"{\"H\"}");
 
@@ -172,6 +193,13 @@ void do_send(osjob_t* j){
 //
 void setup() {
   Serial.begin(115200);
+
+    
+   if (!bmp.begin()) 
+   {
+      Serial.println("[setup] Could not find a valid BMP085 sensor, check wiring!");
+      while (1) {}
+   }
    
   LMIC.datarate = DR_SF7;
   LMIC.rps = updr2rps(LMIC.datarate);
