@@ -6,6 +6,12 @@
   #include <ESP8266WiFi.h>
 #endif
 #include <SPI.h>
+
+// This is a WA for handling AudioFileSourceSD.h includs which should be fixed by adding recurency to the make search mechanism
+#include <SD.h> 
+#include <ESP8266HTTPClient.h>
+#include "ESP8266Spiram.h"
+
 #include "AudioFileSourceSD.h"
 //#include "AudioFileSourceSPIFFS.h"
 #include "AudioFileSourceID3.h"

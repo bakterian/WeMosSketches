@@ -1,0 +1,14 @@
+[
+    {
+        "folderName":"AudioGeneratorMP3",
+        "weblink":"https://github.com/bakterian/ESP8266Audio/archive/RL_001.000.000.zip"
+    }, 
+    {
+        "folderName":"SSD1306Wire",
+        "weblink":"https://github.com/ThingPulse/esp8266-oled-ssd1306/archive/4.0.0.zip"
+    },
+    {
+        "folderName":"ESP8266Spiram",
+        "weblink":"https://github.com/bakterian/ESP8266_Spiram/archive/RL_001.000.000.zip"
+    }
+]
