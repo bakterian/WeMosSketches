@@ -24,11 +24,21 @@ After the download is done please refer to a dedicated readme and trigger the es
 ### Installation
 It is recommended to use released version or just download/clone the master.
 For installing the AudioPlayer just execute the installLibraries bash script.
-This can be done either from linux or cygwin like so:
+
+### Required Binaries:
+  - wget
+  - jq
+  - unzip
+  - make
+  - gcc
+  - gcc-g++
+  
+Please note that without downloading and installing Esp8266-Arduino-Makefile (with default repo-folder naming) the installation scripts will fail.
+The library dependencies can be installed from linux or cygwin like so:
 ```bassh
 $ bash installLibraries.bash
 ```
-Please note that without downloading and installing Esp8266-Arduino-Makefile (with default repo-folder naming) the installation scripts will fail.
+
 
 ### Building
 When both the AudioPlayer and Arduino-Makefile are configured just run make to build the application.

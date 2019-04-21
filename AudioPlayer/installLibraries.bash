@@ -1,5 +1,40 @@
 #!/bin/bash
 
+# useful functions
+checkIfPrereqPresent ()
+{
+	command -v $1 >/dev/null 2>&1 || { echo "I require a binary called: $1 , but it's not installed.  Aborting."; exit 1; }
+}
+
+exitIfPathDoesNotExits()
+{
+  if [ ! -d $1 ]; then
+    echo "The path: \"$1\" does not exit have you installed/downloaded everything? Aborting";
+	exit 1;
+  fi
+}
+
+createDirWhenNotFound ()
+{
+  if [ ! -d $1 ]; then
+    mkdir $1
+  fi
+}
+
+deleteDirIfFound ()
+{
+  if [ -d $1 ]; then
+	echo "removing \"$1\""
+    rm -rfv $1
+  fi
+}
+
+
+checkIfPrereqPresent jq
+checkIfPrereqPresent unzip
+checkIfPrereqPresent wget
+
+
 # CONFIGURATION VARIABLES
 ESP_VERSION=`cat ../../Esp8266-Arduino-Makefile/config.json | jq '.espVersions.ESP8266_VER' | cut -d "\"" -f 2`
 DOWNLOAD_FOLDER=`cat ../../Esp8266-Arduino-Makefile/config.json | jq '.paths.cacheFolder' | cut -d "\"" -f 2`
@@ -12,14 +47,9 @@ LIB_NAMES=(`cat libraries.json | jq --compact-output '.[].folderName' | cut -d "
 # Make sure that the folder names in the libraries.json match the include libraries header files <fileName.h>
 # This is how we detetmine in espXArduino.mk which Esp Arduino libraries have to be compiled.
 
-createDirWhenNotFound ()
-{
-  if [ ! -d $1 ]; then
-    mkdir $1
-  else
-    rm -rfv $1/*
-  fi
-}
+# Check if the esp-8266 project and other depencies are there
+exitIfPathDoesNotExits "../../Esp8266-Arduino-Makefile"
+exitIfPathDoesNotExits $LIBS_FOLDER
 
 # download folder creation if not already exists
 createDirWhenNotFound $DOWNLOAD_FOLDER
@@ -33,7 +63,7 @@ do
     zipFileName=$(basename $link)
     zipInnerFolder=`unzip -qql $DOWNLOAD_FOLDER/${LIB_NAMES[$i]}/$zipFileName | head -n1 | tr -s ' ' | cut -d' ' -f5- | sed 's/.$//'`
     unzip -o $DOWNLOAD_FOLDER/${LIB_NAMES[$i]}/$zipFileName -d $DOWNLOAD_FOLDER/${LIB_NAMES[$i]} 
-    createDirWhenNotFound $LIBS_FOLDER/${LIB_NAMES[$i]}
+    deleteDirIfFound $LIBS_FOLDER/${LIB_NAMES[$i]}
     cp -a $DOWNLOAD_FOLDER/${LIB_NAMES[$i]}/$zipInnerFolder/. $LIBS_FOLDER/${LIB_NAMES[$i]}/
     ((i++))
 done
