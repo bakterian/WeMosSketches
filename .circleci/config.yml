@@ -13,8 +13,9 @@
         - run: git clone https://github.com/bakterian/Esp8266-Arduino-Makefile.git
         - run: echo "current directory:_" && pwd 
         - run: echo "listing files and catalogs:\n" && ls -l -a
-        - run: cd Esp8266-Arduino-Makefile
-        - run: ./esp8266-install.bash
+        - run: cd Esp8266-Arduino-Makefile #Probably step can be removed and next step
+        - run: pwd
+        - run: bash esp8266-install.bash
         - persist_to_workspace:
             root: /tmp
             paths: 
