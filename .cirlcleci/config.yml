@@ -1,0 +1,40 @@
+ version: &configVersion 2.1
+
+ executors:
+  my-executor:
+    docker:
+      - image: &dockerImage bakterian/ciembedded:v1
+    working_directory: /tmp
+
+ jobs:
+    PrepareEsp8266Builder:  
+      executor: my-executor
+      steps:
+        - run: git clone https://github.com/bakterian/Esp8266-Arduino-Makefile.git
+        - run: echo "current directory:_" && pwd 
+        - run: echo "listing files and catalogs:\n" && ls -l -a
+        - run: cd Esp8266-Arduino-Makefile
+        - run: ./esp8266-install.bash
+        - persist_to_workspace:
+          root: Esp8266-Arduino-Makefile
+
+    BuildAudioPlayer:  
+      executor: my-executor
+      steps:
+        - attach_workspace:
+          at: /tmp/Esp8266-Arduino-Makefile
+        - checkout
+        - run: echo "installing Arduino librares" && ./installLibraries.bash
+        - run: echo "current directory:\n" && pwd && ls -l -a
+        - run: ./esp8266-install.bash
+        - run: make -j8
+
+ workflows:
+  version: *configVersion
+  BuildWorkflow:
+    jobs:
+      - PrepareEsp8266Builder
+      - BuildAudioPlayer:
+          requires:
+            - PrepareEsp8266Builder
+
