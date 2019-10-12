@@ -23,7 +23,7 @@
       executor: my-executor
       steps:
         - attach_workspace:
-            at: /tmp/Esp8266-Arduino-Makefile
+            at: /tmp
         - run: mkdir -p WeMosSketches
         - checkout:
             path: "/tmp/WeMosSketches"
