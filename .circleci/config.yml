@@ -24,11 +24,11 @@
       steps:
         - attach_workspace:
             at: /tmp/Esp8266-Arduino-Makefile
-        - checkout
-        - run: echo "installing Arduino librares" && ./installLibraries.bash
-        - run: echo "current directory:\n" && pwd && ls -l -a
-        - run: ./esp8266-install.bash
-        - run: make -j8
+        - run: mkdir -p WeMosSketches
+        - checkout:
+            path: "/tmp/WeMosSketches"
+        - run: echo "installing Arduino librares" && cd /tmp/WeMosSketches/AudioPlayer && bash installLibraries.bash
+        - run: echo "Starting the audioPlayer make build" && cd /tmp/WeMosSketches/AudioPlayer && make -j8
 
  workflows:
   version: *configVersion
