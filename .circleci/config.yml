@@ -1,4 +1,4 @@
- version: &configVersion 2.1
+ version: &configVersion 2
 
  executors:
   my-executor:
@@ -16,13 +16,15 @@
         - run: cd Esp8266-Arduino-Makefile
         - run: ./esp8266-install.bash
         - persist_to_workspace:
-          root: Esp8266-Arduino-Makefile
+            root: /tmp
+            paths: 
+              - Esp8266-Arduino-Makefile
 
     BuildAudioPlayer:  
       executor: my-executor
       steps:
         - attach_workspace:
-          at: /tmp/Esp8266-Arduino-Makefile
+            at: /tmp/Esp8266-Arduino-Makefile
         - checkout
         - run: echo "installing Arduino librares" && ./installLibraries.bash
         - run: echo "current directory:\n" && pwd && ls -l -a
