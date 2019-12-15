@@ -1,5 +1,5 @@
 # AudioPlayer
-This is a ardruino projectof a portable speaker.
+This is a ardruino project of a portable speaker.
 It is planned to use a WiFi Server for music control
 As for the source uploaded mp3s or a internet radio can be used.
 
@@ -14,6 +14,9 @@ As for the source uploaded mp3s or a internet radio can be used.
   - Plastic Box
   - On/Off Switch
   - Cables and a Uniwersal PCB Board
+  
+### GPIO Connections:
+ 
 
 ### Prerequisties
 For building the application either the Arduino IDE or a Makefile approach can be used.
@@ -53,3 +56,11 @@ $ make upload
 
 ### Development
 When doing development and adding new librarry depencies please bear in mind to modify the libraries.json files.
+
+
+### TODO:
+  - Remove I2C Display Support (display will be connected to mqtt client, which will print on notification)
+  - Move hlper functions to additional file and Classes
+  - Add Unit tests and configure cirlce Ci
+  - Add multiple mp3 files in folders
+  - Add support for two buttons and physicly add two connectors
