@@ -28,8 +28,9 @@
  *
  *******************************************************************************/
 
-#define WAIT_SECS 60
-#define WAIT_USECS 60e6
+//---------------------------------------------------------
+// INCLUDES
+//---------------------------------------------------------
 
 #if defined(__AVR__)
 #include <avr/pgmspace.h>
@@ -46,13 +47,17 @@
 #include "hal/hal.h"
 #include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_BMP085.h>
-
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include "lmicAppUtils.h"
 
 //---------------------------------------------------------
-// Sensor declarations
+// Sensor declarations and defines
 //---------------------------------------------------------
 
+// Sleep period
+#define WAIT_SECS 90
+#define WAIT_USECS 90e6
 
 // Frame Counter
 int count=0;
@@ -82,12 +87,12 @@ unsigned char DevAddr[4] = { 0x26, 0x01, 0x18, 0x14 };
 #define NSS_PIN       2  //D4 - GPIO2
 #define DIO1_DIO2_PIN 15 //D8 - GPIO15
 
-//delcare and define temperature and pressure sensor instance (BMP085)
+//delcare and define senor instance (BME280)
 // On Wemos D1 we use these GPIOS:
 // D1 - GPIO5 - SCL shared with NSS.
 // D2 - GPIO4 - SDA
-
-Adafruit_BMP085 bmp;
+  
+Adafruit_BME280 bmp;
 
 // ----------------------------------------------------------------------------
 // APPLICATION CALLBACKS
@@ -150,41 +155,66 @@ void onEvent (ev_t ev) {
     }
 }
 
-void doBmpMeasurments()
+void printBmpMeasurements(const float pressure, const float temp, const float humidity)
 {
-    Serial.print("Temperature = ");
-    Serial.print(bmp.readTemperature());
-    Serial.println(" *C");
-    
     Serial.print("Pressure = ");
-    Serial.print(bmp.readPressure());
+    Serial.print(pressure);
     Serial.println(" Pa");
+
+    Serial.print("Temperature = ");
+    Serial.print(temp);
+    Serial.println(" *C");
+
+    Serial.print("Humidity = ");
+    Serial.print(humidity);
+    Serial.println(" %");
 }
 
-void do_send(osjob_t* j){
-	  delay(1);													// XXX delay is added for Serial
-      Serial.print("Time: ");
-      Serial.println(millis() / 1000);
-      // Show TX channel (channel numbers are local to LMIC)
-      Serial.print("Send, txCnhl: ");
-      Serial.println(LMIC.txChnl);
-      Serial.print("Opmode check: ");
-      // Check if there is not a current TX/RX job running
-    if (LMIC.opmode & (1 << 7)) {
-      Serial.println("OP_TXRXPEND, not sending");
-    } 
-	else {
+void do_send(osjob_t* j)
+{
+  delay(1);	// XXX delay is added for Serial
+  Serial.print("Time: ");
+  Serial.println(millis() / 1000);
+  // Show TX channel (channel numbers are local to LMIC)
+  Serial.print("Send, txCnhl: ");
+  Serial.println(LMIC.txChnl);
+  Serial.print("Opmode check: ");
+  
+  // Check if there is not a current TX/RX job running
+  if (LMIC.opmode & (1 << 7)) 
+  {
+    Serial.println("OP_TXRXPEND, not sending");
+  } 
 	
-    doBmpMeasurments();
+	else 
+	{
+    Serial.println("sending");
     
-	  strcpy((char *) mydata,"{\"H\"}");
+    const lmicAppUtils::TypeAsArray<float>    pressureFloatArray(bmp.readPressure()); 
+    const lmicAppUtils::TypeAsArray<float>    tempFloatArray(bmp.readTemperature());
+    const lmicAppUtils::TypeAsArray<float>    humidityFloatArray(bmp.readHumidity());  
+    const auto appPayloadSize                 = static_cast<uint8_t>(3 * sizeof(float));
+    const auto pressureAsByteArray            = pressureFloatArray.getBigEndianArray();
+    const auto tempAsByteArray                = tempFloatArray.getBigEndianArray();
+    const auto humidityAsByteArray            = humidityFloatArray.getBigEndianArray();
+    
+    //printing out the measured values:
+    printBmpMeasurements(pressureFloatArray.getOriginalType(),
+                         tempFloatArray.getOriginalType(),
+                         humidityFloatArray.getOriginalType());
 
-	  Serial.print("ready to send: "); 
-	  Serial.println((char *)mydata);
-	  LMIC_setTxData2(1, mydata, strlen((char *)mydata), 0);
-    }
-    // Schedule a timed job to run at the given timestamp (absolute system time)
-    os_setTimedCallback(j, os_getTime()+sec2osticks(WAIT_SECS), do_send);
+    //filling the payload buffer
+    memcpy(&mydata, &pressureAsByteArray, sizeof(float));
+    memcpy(&mydata[sizeof(float)], &tempAsByteArray, sizeof(float));
+    memcpy(&mydata[(2*sizeof(float))], &humidityAsByteArray, sizeof(float));
+
+    //sendin out the Lora data using chirp spread spectrum
+    Serial.print("sendig out the app payload data"); 
+    LMIC_setTxData2(1, mydata, appPayloadSize, 0);
+  }
+  
+  // Schedule a timed job to run at the given timestamp (absolute system time)
+  os_setTimedCallback(j, os_getTime()+sec2osticks(WAIT_SECS), do_send);
          
 }
 
@@ -197,7 +227,7 @@ void setup() {
     
    if (!bmp.begin()) 
    {
-      Serial.println("[setup] Could not find a valid BMP085 sensor, check wiring!");
+      Serial.println("[setup] Could not find a valid BME280 sensor, check wiring!");
       while (1) {}
    }
    
