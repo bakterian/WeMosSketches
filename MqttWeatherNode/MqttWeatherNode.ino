@@ -21,7 +21,7 @@ char thingsboardServer[] =  "YOUR_MQTT_SERVER_ADDRESS"
 #define MQTT_TOPIC_IN       "YOUR_MQTT_IN_TOPIC"
 #define MQTT_TOPIC_OUT      "YOUR_MQTT_OUT_TOPIC"
 #else
-#include "D:\5_GITHUB\0_CONFIG\MqttAwsCredentials.h"
+#include "D:\5_GITHUB\0_CONFIG\MqttBrokerCredentials.h"
 #endif
 
 //LOCAL DEFINES
