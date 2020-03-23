@@ -56,8 +56,20 @@
 //---------------------------------------------------------
 
 // Sleep period
-#define WAIT_SECS 90
-#define WAIT_USECS 90e6
+#define WAIT_SECS 145
+#define WAIT_USECS 145e6
+
+// Measurment valid ranges
+#define PRESSURE_MIN (30000.0f)
+#define PRESSURE_MAX (110000.0f)
+
+#define TEMP_MIN (-40.0f)
+#define TEMP_MAX (85.0f)
+
+#define HUMID_MIN (0.0f)
+#define HUMID_MAX (100.0f)
+
+using namespace lmicAppUtils;
 
 // Frame Counter
 int count=0;
@@ -190,27 +202,42 @@ void do_send(osjob_t* j)
 	{
     Serial.println("sending");
     
-    const lmicAppUtils::TypeAsArray<float>    pressureFloatArray(bmp.readPressure()); 
-    const lmicAppUtils::TypeAsArray<float>    tempFloatArray(bmp.readTemperature());
-    const lmicAppUtils::TypeAsArray<float>    humidityFloatArray(bmp.readHumidity());  
-    const auto appPayloadSize                 = static_cast<uint8_t>(3 * sizeof(float));
-    const auto pressureAsByteArray            = pressureFloatArray.getBigEndianArray();
-    const auto tempAsByteArray                = tempFloatArray.getBigEndianArray();
-    const auto humidityAsByteArray            = humidityFloatArray.getBigEndianArray();
+    const TypeAsArray<float>         pressureFloatArray(bmp.readPressure()); 
+    const TypeAsArray<float>         tempFloatArray(bmp.readTemperature());
+    const TypeAsArray<float>         humidityFloatArray(bmp.readHumidity());  
+    const auto appPayloadSize        = static_cast<uint8_t>((3 * sizeof(float)) + sizeof(uint8_t));
+    const auto pressureAsByteArray   = pressureFloatArray.getBigEndianArray();
+    const auto tempAsByteArray       = tempFloatArray.getBigEndianArray();
+    const auto humidityAsByteArray   = humidityFloatArray.getBigEndianArray();
+
+    //Check if the measured data is in range
+    if(isWithinRange(pressureFloatArray,PRESSURE_MIN, PRESSURE_MAX) &&
+       isWithinRange(tempFloatArray,TEMP_MIN, TEMP_MAX) &&
+       isWithinRange(humidityFloatArray,HUMID_MIN, HUMID_MAX))
+    {
+      //printing out the measured values:
+      printBmpMeasurements(pressureFloatArray.getOriginalType(),
+                           tempFloatArray.getOriginalType(),
+                           humidityFloatArray.getOriginalType());
+
+      //calculate the CRC8 (polynomial 0x31)
+      const uint8_t crc8 = crc8Calculate(humidityFloatArray, tempFloatArray, pressureFloatArray);
+      
+      //filling the payload buffer
+      memcpy(&mydata, &pressureAsByteArray, sizeof(float));
+      memcpy(&mydata[sizeof(float)], &tempAsByteArray, sizeof(float));
+      memcpy(&mydata[(2*sizeof(float))], &humidityAsByteArray, sizeof(float));
+      memcpy(&mydata[(3*sizeof(float))], &crc8, sizeof(uint8_t));
+  
+      //sendin out the Lora data using chirp spread spectrum
+      Serial.println("sendig out the app payload data"); 
+      LMIC_setTxData2(1, mydata, appPayloadSize, 0);
+    }
+    else
+    {
+      Serial.println("The measured values where out of valid sensor min - max range."); 
+    }
     
-    //printing out the measured values:
-    printBmpMeasurements(pressureFloatArray.getOriginalType(),
-                         tempFloatArray.getOriginalType(),
-                         humidityFloatArray.getOriginalType());
-
-    //filling the payload buffer
-    memcpy(&mydata, &pressureAsByteArray, sizeof(float));
-    memcpy(&mydata[sizeof(float)], &tempAsByteArray, sizeof(float));
-    memcpy(&mydata[(2*sizeof(float))], &humidityAsByteArray, sizeof(float));
-
-    //sendin out the Lora data using chirp spread spectrum
-    Serial.print("sendig out the app payload data"); 
-    LMIC_setTxData2(1, mydata, appPayloadSize, 0);
   }
   
   // Schedule a timed job to run at the given timestamp (absolute system time)
